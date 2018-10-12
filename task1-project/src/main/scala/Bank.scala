@@ -1,20 +1,23 @@
-import scala.concurrent.ExecutionContext
-import scala.concurrent.forkjoin.ForkJoinPool
+import java.util.concurrent.Executors
 
 class Bank(val allowedAttempts: Integer = 3) {
 
     //private val uid = 0 TODO: find out if we need this and why
     private val transactionsQueue: TransactionQueue = new TransactionQueue()
     private val processedTransactions: TransactionQueue = new TransactionQueue()
-    private val executorContext = ExecutionContext.fromExecutor(new ForkJoinPool(100)) // TODO: Find out if this is the type of EC we need
+    private val executorContext = Executors newFixedThreadPool(100)
 
     private var account_id_counter = 0 // previous unique account ID
 
     def addTransactionToQueue(from: Account, to: Account, amount: Double): Unit = {
-      val t = transactionsQueue push new Transaction(
+      transactionsQueue push new Transaction(
         transactionsQueue, processedTransactions, from, to, amount, allowedAttempts)
 
-        // TODO: submit thread to executor context
+        executorContext submit new Runnable {
+            override def run(): Unit = {
+                processTransactions
+            }
+        }
     }
 
     def generateAccountId: Int = this.synchronized {
