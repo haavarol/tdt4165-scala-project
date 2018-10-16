@@ -2,7 +2,7 @@ import java.util.concurrent.Executors
 
 class Bank(val allowedAttempts: Integer = 3) {
 
-    //private val uid = 0 TODO: find out if we need this and why
+    //private val uid = 0
     private val transactionsQueue: TransactionQueue = new TransactionQueue()
     private val processedTransactions: TransactionQueue = new TransactionQueue()
     private val executorContext = Executors newFixedThreadPool(100)
@@ -10,12 +10,11 @@ class Bank(val allowedAttempts: Integer = 3) {
     private var account_id_counter = 0 // previous unique account ID
 
     def addTransactionToQueue(from: Account, to: Account, amount: Double): Unit = {
-      transactionsQueue push new Transaction(
-        transactionsQueue, processedTransactions, from, to, amount, allowedAttempts)
+      transactionsQueue push new Transaction(from, to, amount, allowedAttempts)
 
         executorContext submit new Runnable {
             override def run(): Unit = {
-                processTransactions
+                processTransaction
             }
         }
     }
@@ -25,8 +24,22 @@ class Bank(val allowedAttempts: Integer = 3) {
         return account_id_counter
     }
 
-    private def processTransactions: Unit = {
-        // TODO
+    private def processTransaction: Unit = {
+        val transaction = transactionsQueue.pop
+        transaction run
+
+        if(transaction.status == TransactionStatus.PENDING) {
+            transactionsQueue push transaction
+            executorContext submit new Runnable {
+                override def run(): Unit = {
+                    processTransaction
+                }
+            }
+
+        } else {
+            processedTransactions push transaction
+        }
+
     }
 
     def addAccount(initialBalance: Double): Account = {
