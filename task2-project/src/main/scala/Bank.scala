@@ -14,7 +14,13 @@ case class IdentifyActor()
 class Bank(val bankId: String) extends Actor {
 
     val accountCounter = new AtomicInteger(1000)
+    private var account_id_counter = 0 // previous unique account ID
 
+    def generateAccountId: Int = this.synchronized {
+        account_id_counter += 1
+        return account_id_counter
+    }
+    
     def createAccount(initialBalance: Double): ActorRef = {
         // Should create a new Account Actor and return its actor reference. Accounts should be assigned with unique ids (increment with 1).
         ???

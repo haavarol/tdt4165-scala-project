@@ -10,11 +10,12 @@ case class TransactionRequestReceipt(toAccountNumber: String,
 
 case class BalanceRequest()
 
-class Account(val accountId: String, val bankId: String, val initialBalance: Double = 0) extends Actor {
+class Account(val accountId: String, val bankId: Bank, val initialBalance: Double = 0) extends Actor {
 
     private var transactions = HashMap[String, Transaction]()
 
     class Balance(var amount: Double) {}
+    val uid = bankId.generateAccountId
 
     val balance = new Balance(initialBalance)
 
@@ -32,9 +33,25 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
         ???
     }
 
-    def withdraw(amount: Double): Unit = ??? // Like in part 1
-    def deposit(amount: Double): Unit = ??? // Like in part 1
-    def getBalanceAmount: Double = ??? // Like in part 1
+    def withdraw(amount: Double): Unit = this.synchronized {
+        if(amount < 0)
+            throw new IllegalAmountException("Cannot withdraw negative amount")
+        else if(amount > getBalanceAmount)
+            throw new NoSufficientFundsException("Cannot withdraw amount larger than balance")
+
+        balance.amount -= amount
+    }    
+    
+    def deposit(amount: Double): Unit = this.synchronized {
+        if(amount < 0)
+            throw new IllegalAmountException("Cannot deposit negative amount")
+
+        balance.amount += amount
+    }
+
+    def getBalanceAmount: Double = this.synchronized {
+        balance.amount
+    }
 
     def sendTransactionToBank(t: Transaction): Unit = {
         // Should send a message containing t to the bank of this account
@@ -43,7 +60,7 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def transferTo(accountNumber: String, amount: Double): Transaction = {
 
-        val t = new Transaction(from = getFullAddress, to = accountNumber, amount = amount)
+        val t = new Transaction(from = getFullAddress, to = accountNumber, amount = amount, allowedAttempts = 3)
 
         if (reserveTransaction(t)) {
             try {
