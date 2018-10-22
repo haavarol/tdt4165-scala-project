@@ -36,7 +36,9 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def withdraw(amount: Double): Unit = ??? // Like in part 1
     def deposit(amount: Double): Unit = ??? // Like in part 1
-    def getBalanceAmount: Double = ??? // Like in part 1
+    def getBalanceAmount: Double = this.synchronized {
+        balance.amount
+    } // Like in part 1
 
     def sendTransactionToBank(t: Transaction): Unit = {
         // Should send a message containing t to the bank of this account
@@ -78,7 +80,7 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 			???
 		}
 
-		case BalanceRequest => ??? // Should return current balance
+		case BalanceRequest => sender ! getBalanceAmount // Should return current balance
 
 		case t: Transaction => {
 			// Handle incoming transaction
