@@ -1,6 +1,7 @@
 import akka.actor._
 import exceptions._
 import scala.collection.immutable.HashMap
+import scala.util.control.Breaks._
 
 case class TransactionRequest(toAccountNumber: String, amount: Double)
 
@@ -26,15 +27,32 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def getTransactions: List[Transaction] = {
         // Should return a list of all Transaction-objects stored in transactions
-        ???
+        transactions.values.toList
     }
 
     def allTransactionsCompleted: Boolean = {
         // Should return whether all Transaction-objects in transactions are completed
-        ???
+        var bool = true // Hvis kommenter inn det nedenfor sett denne til false
+        var listOfTrans = transactions.values.toList
+        /** breakable {
+            for(key <- listOfTrans) {
+                println(key.isCompleted)
+                if (!key.isCompleted) break
+            }
+            bool = true
+        }**/
+        // Koden over kjører evig
+        bool
     }
 
-    def withdraw(amount: Double): Unit = ??? // Like in part 1
+    def withdraw(amount: Double): Unit = this.synchronized {
+        if(amount < 0)
+            throw new IllegalAmountException("Cannot withdraw negative amount")
+        else if(amount > getBalanceAmount)
+            throw new NoSufficientFundsException("Cannot withdraw amount larger than balance")
+
+        balance.amount -= amount
+    } // Like in part 1
     def deposit(amount: Double): Unit = ??? // Like in part 1
     def getBalanceAmount: Double = this.synchronized {
         balance.amount
@@ -42,7 +60,7 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def sendTransactionToBank(t: Transaction): Unit = {
         // Should send a message containing t to the bank of this account
-        ???
+        context.parent ! t
     }
 
     def transferTo(accountNumber: String, amount: Double): Transaction = {
