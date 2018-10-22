@@ -1,5 +1,5 @@
 import java.util.NoSuchElementException
-
+import scala.collection.mutable
 import akka.actor._
 import java.util.concurrent.atomic.AtomicInteger
 import scala.concurrent.duration._
@@ -16,23 +16,39 @@ class Bank(val bankId: String) extends Actor {
     val accountCounter = new AtomicInteger(1000)
 
     def createAccount(initialBalance: Double): ActorRef = {
-        // Should create a new Account Actor and return its actor reference. Accounts should be assigned with unique ids (increment with 1).
-        ???
+        val i = accountCounter.getAndIncrement()
+        val id = s"i"
+        BankManager.createAccount(id, this.bankId, initialBalance)
     }
 
     def findAccount(accountId: String): Option[ActorRef] = {
-        // Use BankManager to look up an account with ID accountId
-        ???
+        try {
+            Some(BankManager.findAccount(this.bankId, accountId))
+        } catch {
+            case e: NumberFormatException => None
+        }
+    }
+
+    def findAccount1(accountId: String): ActorRef = {
+        println("TEST1", s"$accountId")
+        BankManager.findAccount(this.bankId, accountId)
     }
 
     def findOtherBank(bankId: String): Option[ActorRef] = {
         // Use BankManager to look up a different bank with ID bankId
-        ???
+        try {
+            Some(BankManager.findBank(bankId))
+        } catch {
+            case e: NumberFormatException => None
+        }
     }
 
     override def receive = {
-        case CreateAccountRequest(initialBalance) => ??? // Create a new account
-        case GetAccountRequest(id) => ??? // Return account
+        case CreateAccountRequest(initialBalance) => 
+            createAccount(initialBalance) // Create a new account
+        case GetAccountRequest(id) => 
+            println("TEST")
+            findAccount1(id) // Return account
         case IdentifyActor => sender ! this
         case t: Transaction => processTransaction(t)
 
@@ -41,7 +57,7 @@ class Bank(val bankId: String) extends Actor {
         ???
         }
 
-        case msg => ???
+        case msg => println(s"$msg")
     }
 
     def processTransaction(t: Transaction): Unit = {

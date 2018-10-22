@@ -12,6 +12,8 @@ case class BalanceRequest()
 
 class Account(val accountId: String, val bankId: String, val initialBalance: Double = 0) extends Actor {
 
+    private val actorSystem = ActorSystem("Account")
+
     private var transactions = HashMap[String, Transaction]()
 
     class Balance(var amount: Double) {}
