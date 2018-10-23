@@ -50,16 +50,15 @@ class Bank(val bankId: String) extends Actor {
             sender ! createAccount(initialBalance) // Create a new account
         case GetAccountRequest(id) => 
             println("TEST")
-            findAccount1(id) // Return account
+            sender ! findAccount1(id) // Return account
         case IdentifyActor => sender ! this
-        case t: Transaction => {
-            println("Banken får t")
-            processTransaction(t)
-        }
+        case t: Transaction => processTransaction(t)
 
         case t: TransactionRequestReceipt => {
         // Forward receipt
-        ???
+        findAccount(t.toAccountNumber) match {
+            case Some(a) => a ! t
+             } 
         }
 
         case msg => println(s"$msg")
@@ -71,13 +70,30 @@ class Bank(val bankId: String) extends Actor {
         val toBankId = if (isInternal) bankId else t.to.substring(0, 4)
         val toAccountId = if (isInternal) t.to else t.to.substring(4)
         val transactionStatus = t.status
-        println("Hei!")
+        
         // This method should forward Transaction t to an account or another bank, depending on the "to"-address.
         // HINT: Make use of the variables that have been defined above.
-        if(isInternal || toBankId == bankId){
-            findAccount1(toAccountId) ! t
+        
+        // Dersom det er internet i banken
+        if(isInternal || toBankId == bankId) {
+            findAccount(toAccountId) match {
+                case Some(a) => a ! t
+                case None => {
+                    println("Account finnes ikke")
+                    t.status = TransactionStatus.FAILED
+
+                    sender ! new TransactionRequestReceipt(t.from, t.id, t)
+                }
+            }
+            // ! t
         }
-        else {
-        }
+
+        // Dersom det er en ekstern bank
+      /**  else {
+            findOtherBank(tobankId) match {
+                case Some(b)
+            }
+        }**/
+
     }
 }

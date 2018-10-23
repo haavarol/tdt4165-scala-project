@@ -95,6 +95,7 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
     def reserveTransaction(t: Transaction): Boolean = {
       if (!transactions.contains(t.id)) {
         transactions += (t.id -> t)
+        println(getTransactions)
         return true
       }
       false
@@ -108,7 +109,8 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
         var status = TransactionStatus.SUCCESS
         val id = t.id
         var receiptReceived = true
-        var from = t.from
+        var from = t.from.substring(4)
+        println(from)
         deposit(t.amount)
         t.status = TransactionStatus.SUCCESS
         val receipt = new TransactionRequestReceipt(from, id, t)
@@ -121,7 +123,18 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
 		case TransactionRequestReceipt(to, transactionId, transaction) => {
 			// Process receipt
-			???
+             println(s"Account $accountId received transactionReceipt for ${transactionId}")
+             println(s"\t--> amount = ${transaction.amount}")
+             println(s"\t--> status = ${transaction.status}")
+             println(s"\t--> receiptReceived = ${transaction.receiptReceived}")
+             println(this.accountId)
+
+            println(getTransactions)
+			transactions(transactionId).status = transaction.status
+            transactions(transactionId).receiptReceived = true
+            if (transaction.status == TransactionStatus.FAILED) {
+                this.balance.amount += transaction.amount
+            }
 		}
 
 		case BalanceRequest => sender ! getBalanceAmount // Should return current balance
@@ -131,7 +144,6 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
             println("GALGAKSJLJGFSLGJØAFSKJGØAFSKJG")
 			sender ! handleTransaction(t)
 		}
-
 		case msg => ???
     }
 
