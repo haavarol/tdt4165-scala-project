@@ -32,17 +32,17 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def allTransactionsCompleted: Boolean = {
         // Should return whether all Transaction-objects in transactions are completed
-        var bool = true // Hvis kommenter inn det nedenfor sett denne til false
-        /** var listOfTrans = transactions.values.toList
+        var bool = true // Hvis kommenter inn det nedenfor sett denne til true
+         var listOfTrans = transactions.values.toList
          breakable {
             for(key <- listOfTrans) {
                 println(key.isCompleted)
                 if (key.isCompleted == false){
-                    bool = true
+                    bool = false
                     break
                 } 
             }
-         }**/
+         }
         // Koden over kjører evig
         bool
     }
