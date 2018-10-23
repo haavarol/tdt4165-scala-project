@@ -27,7 +27,7 @@ class Bank(val bankId: String) extends Actor {
         try {
             Some(BankManager.findAccount(this.bankId, accountId))
         } catch {
-            case e: NumberFormatException => None
+            case e: NoSuchElementException => None
         }
     }
 
@@ -41,7 +41,7 @@ class Bank(val bankId: String) extends Actor {
         try {
             Some(BankManager.findBank(bankId))
         } catch {
-            case e: NumberFormatException => None
+            case e: NoSuchElementException => None
         }
     }
 
@@ -59,8 +59,11 @@ class Bank(val bankId: String) extends Actor {
 
         case t: TransactionRequestReceipt => {
         // Forward receipt
+        val xx = t.toAccountNumber
+        println(s"ACCOUNT: $xx")
         findAccount(t.toAccountNumber) match {
             case Some(a) => a ! t
+            case None => println("feafea")
              } 
         }
 

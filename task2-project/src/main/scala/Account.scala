@@ -121,19 +121,17 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
     override def receive = {
 		case IdentifyActor => sender ! this 
 
-		case TransactionRequestReceipt(to, transactionId, transaction) => {
+		case TransactionRequestReceipt(to, transactionId, t) => {
 			// Process receipt
-             println(s"Account $accountId received transactionReceipt for ${transactionId}")
-             println(s"\t--> amount = ${transaction.amount}")
-             println(s"\t--> status = ${transaction.status}")
-             println(s"\t--> receiptReceived = ${transaction.receiptReceived}")
              println(this.accountId)
 
-            println(getTransactions)
-			transactions(transactionId).status = transaction.status
-            transactions(transactionId).receiptReceived = true
-            if (transaction.status == TransactionStatus.FAILED) {
-                this.balance.amount += transaction.amount
+            transactions += (t.id) -> t
+
+            println(t.status) 
+			//transactions(transactionId).status = transaction.status
+            //transactions(transactionId).receiptReceived = true
+            if (t.status == TransactionStatus.FAILED) {
+                this.balance.amount += t.amount
             }
 		}
 
