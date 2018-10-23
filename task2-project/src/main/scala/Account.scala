@@ -67,15 +67,18 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
     def sendTransactionToBank(t: Transaction): Unit = {
         // Should send a message containing t to the bank of this account
-        context.parent ! t
+        println("HEA")
+        print(BankManager.findBank(this.bankId))
+        BankManager.findBank(this.bankId) ! t
     }
 
     def transferTo(accountNumber: String, amount: Double): Transaction = {
-
         val t = new Transaction(from = getFullAddress, to = accountNumber, amount = amount)
+                        println("ASFG")
 
         if (reserveTransaction(t)) {
             try {
+                println("GEr")
                 withdraw(amount)
                 sendTransactionToBank(t)
 
@@ -97,8 +100,24 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
       false
     }
 
+    def handleTransaction(t: Transaction): TransactionRequestReceipt = {
+        val isInternal = t.to.length <= 4
+        val toBankId = if (isInternal) bankId else t.to.substring(0, 4)
+        val toAccountId = if (isInternal) t.to else t.to.substring(4)
+        var transactionStatus = t.status
+        var status = TransactionStatus.SUCCESS
+        val id = t.id
+        var receiptReceived = true
+        var from = t.from
+        deposit(t.amount)
+        t.status = TransactionStatus.SUCCESS
+        val receipt = new TransactionRequestReceipt(from, id, t)
+        println(receipt)
+        return receipt
+    }
+
     override def receive = {
-		case IdentifyActor => sender ! this
+		case IdentifyActor => sender ! this 
 
 		case TransactionRequestReceipt(to, transactionId, transaction) => {
 			// Process receipt
@@ -109,7 +128,8 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
 		case t: Transaction => {
 			// Handle incoming transaction
-			???
+            println("GALGAKSJLJGFSLGJØAFSKJGØAFSKJG")
+			sender ! handleTransaction(t)
 		}
 
 		case msg => ???
