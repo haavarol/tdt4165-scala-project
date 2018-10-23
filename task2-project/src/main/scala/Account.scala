@@ -33,14 +33,16 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
     def allTransactionsCompleted: Boolean = {
         // Should return whether all Transaction-objects in transactions are completed
         var bool = true // Hvis kommenter inn det nedenfor sett denne til false
-        var listOfTrans = transactions.values.toList
-        /** breakable {
+        /** var listOfTrans = transactions.values.toList
+         breakable {
             for(key <- listOfTrans) {
                 println(key.isCompleted)
-                if (!key.isCompleted) break
+                if (key.isCompleted == false){
+                    bool = true
+                    break
+                } 
             }
-            bool = true
-        }**/
+         }**/
         // Koden over kjører evig
         bool
     }
@@ -53,7 +55,12 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
         balance.amount -= amount
     } // Like in part 1
-    def deposit(amount: Double): Unit = ??? // Like in part 1
+    def deposit(amount: Double): Unit = this.synchronized {
+        if(amount < 0)
+            throw new IllegalAmountException("Cannot deposit negative amount")
+
+        balance.amount += amount
+    } // Like in part 1
     def getBalanceAmount: Double = this.synchronized {
         balance.amount
     } // Like in part 1
