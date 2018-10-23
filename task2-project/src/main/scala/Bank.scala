@@ -52,7 +52,10 @@ class Bank(val bankId: String) extends Actor {
             println("TEST")
             sender ! findAccount1(id) // Return account
         case IdentifyActor => sender ! this
-        case t: Transaction => processTransaction(t)
+        case t: Transaction =>{
+            println(this.bankId)
+             processTransaction(t)
+        }
 
         case t: TransactionRequestReceipt => {
         // Forward receipt
@@ -85,15 +88,20 @@ class Bank(val bankId: String) extends Actor {
                     sender ! new TransactionRequestReceipt(t.from, t.id, t)
                 }
             }
-            // ! t
         }
 
         // Dersom det er en ekstern bank
-      /**  else {
-            findOtherBank(tobankId) match {
-                case Some(b)
+        else {
+            findOtherBank(toBankId) match {
+                case Some(b) => b ! t
+                case None => {
+                    println("Bank finnes ikke")
+                    t.status = TransactionStatus.FAILED
+                    
+                    sender ! new TransactionRequestReceipt(t.from, t.id, t)
+                }
             }
-        }**/
+        }
 
     }
 }
