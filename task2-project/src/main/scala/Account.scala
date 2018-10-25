@@ -13,8 +13,6 @@ case class BalanceRequest()
 
 class Account(val accountId: String, val bankId: String, val initialBalance: Double = 0) extends Actor {
 
-    private val actorSystem = ActorSystem("Account")
-
     private var transactions = HashMap[String, Transaction]()
 
     class Balance(var amount: Double) {}
@@ -33,20 +31,19 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
     def allTransactionsCompleted: Boolean = {
         // Should return whether all Transaction-objects in transactions are completed
         var bool = true // Hvis kommenter inn det nedenfor sett denne til true
-         var listOfTrans = transactions.values.toList
-         breakable {
+        var listOfTrans = transactions.values.toList
+        breakable {
             for(key <- listOfTrans) {
-                println(key.isCompleted)
                 if (key.isCompleted == false){
                     bool = false
                     break
                 } 
             }
-         }
-        // Koden over kjører evig
-        bool
+        }
+        return bool
     }
 
+    // Like in part 1
     def withdraw(amount: Double): Unit = this.synchronized {
         if(amount < 0)
             throw new IllegalAmountException("Cannot withdraw negative amount")
@@ -54,31 +51,30 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
             throw new NoSufficientFundsException("Cannot withdraw amount larger than balance")
 
         balance.amount -= amount
-    } // Like in part 1
+    }
+
+    // Like in part 1
     def deposit(amount: Double): Unit = this.synchronized {
         if(amount < 0)
             throw new IllegalAmountException("Cannot deposit negative amount")
 
         balance.amount += amount
-    } // Like in part 1
+    }
+
+    // Like in part 1
     def getBalanceAmount: Double = this.synchronized {
         balance.amount
-    } // Like in part 1
+    }
 
     def sendTransactionToBank(t: Transaction): Unit = {
         // Should send a message containing t to the bank of this account
-        println("HEA")
-        print(BankManager.findBank(this.bankId))
         BankManager.findBank(this.bankId) ! t
     }
 
     def transferTo(accountNumber: String, amount: Double): Transaction = {
         val t = new Transaction(from = getFullAddress, to = accountNumber, amount = amount)
-                        println("ASFG")
-
         if (reserveTransaction(t)) {
             try {
-                println("GEr")
                 withdraw(amount)
                 sendTransactionToBank(t)
 
@@ -93,28 +89,19 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
     }
 
     def reserveTransaction(t: Transaction): Boolean = {
-      if (!transactions.contains(t.id)) {
-        transactions += (t.id -> t)
-        println(getTransactions)
-        return true
-      }
-      false
+        if (!transactions.contains(t.id)) {
+            transactions += (t.id -> t)
+            return true
+        }
+        false
     }
 
     def handleTransaction(t: Transaction): TransactionRequestReceipt = {
-        val isInternal = t.to.length <= 4
-        val toBankId = if (isInternal) bankId else t.to.substring(0, 4)
-        val toAccountId = if (isInternal) t.to else t.to.substring(4)
-        var transactionStatus = t.status
-        var status = TransactionStatus.SUCCESS
         val id = t.id
-        var receiptReceived = true
-        var from = t.from.substring(4)
-        println(from)
+        val to = t.from.substring(4)
         deposit(t.amount)
         t.status = TransactionStatus.SUCCESS
-        val receipt = new TransactionRequestReceipt(from, id, t)
-        println(receipt)
+        val receipt = new TransactionRequestReceipt(to, id, t)
         return receipt
     }
 
@@ -123,13 +110,7 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
 		case TransactionRequestReceipt(to, transactionId, t) => {
 			// Process receipt
-             println(this.accountId)
-
             transactions += (t.id) -> t
-
-            println(t.status) 
-			//transactions(transactionId).status = transaction.status
-            //transactions(transactionId).receiptReceived = true
             if (t.status == TransactionStatus.FAILED) {
                 this.balance.amount += t.amount
             }
@@ -139,10 +120,9 @@ class Account(val accountId: String, val bankId: String, val initialBalance: Dou
 
 		case t: Transaction => {
 			// Handle incoming transaction
-            println("GALGAKSJLJGFSLGJØAFSKJGØAFSKJG")
 			sender ! handleTransaction(t)
 		}
-		case msg => ???
+		case msg => print("Default")
     }
 
 

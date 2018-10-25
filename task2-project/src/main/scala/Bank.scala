@@ -17,22 +17,20 @@ class Bank(val bankId: String) extends Actor {
 
     def createAccount(initialBalance: Double): ActorRef = {
         val i = accountCounter.incrementAndGet()
-        val id = s"$i"
+        val id = s"$i" //Fancy val to string
         val account = BankManager.createAccount(id, this.bankId, initialBalance)
-        println(account)
         account
     }
 
-    def findAccount(accountId: String): Option[ActorRef] = {
+    def findAccount(bankId: String, accountId: String): Option[ActorRef] = {
         try {
-            Some(BankManager.findAccount(this.bankId, accountId))
+            Some(BankManager.findAccount(bankId, accountId))
         } catch {
             case e: NoSuchElementException => None
         }
     }
 
     def findAccount1(accountId: String): ActorRef = {
-        println("TEST1", s"$accountId")
         BankManager.findAccount(this.bankId, accountId)
     }
 
@@ -49,22 +47,21 @@ class Bank(val bankId: String) extends Actor {
         case CreateAccountRequest(initialBalance) => 
             sender ! createAccount(initialBalance) // Create a new account
         case GetAccountRequest(id) => 
-            println("TEST")
             sender ! findAccount1(id) // Return account
         case IdentifyActor => sender ! this
         case t: Transaction =>{
-            println(this.bankId)
-             processTransaction(t)
+            processTransaction(t) // Process incoming Transaction
         }
 
         case t: TransactionRequestReceipt => {
         // Forward receipt
-        val xx = t.toAccountNumber
-        println(s"ACCOUNT: $xx")
-        findAccount(t.toAccountNumber) match {
+        val accountNumber = t.toAccountNumber
+        val isInternal = t.transaction.from.length <= 4
+        val bankId = if (isInternal) this.bankId else t.transaction.from.substring(0, 4)
+        findAccount(bankId, t.toAccountNumber) match {
             case Some(a) => a ! t
-            case None => println("feafea")
-             } 
+            case None => println("None, Vi har fått kvittering fra konto som ikke finnes?")
+        } 
         }
 
         case msg => println(s"$msg")
@@ -82,7 +79,7 @@ class Bank(val bankId: String) extends Actor {
         
         // Dersom det er internet i banken
         if(isInternal || toBankId == bankId) {
-            findAccount(toAccountId) match {
+            findAccount(toBankId, toAccountId) match {
                 case Some(a) => a ! t
                 case None => {
                     println("Account finnes ikke")
