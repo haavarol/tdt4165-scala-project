@@ -9,9 +9,11 @@ object BankManager {
     private val accounts = new mutable.HashMap[String, ActorRef] with mutable.SynchronizedMap[String, ActorRef]
 
     def createBank(bankId: String): ActorRef = {
-        val name = s"bank$bankId"
-        banks += (name -> actorSystem.actorOf(Props(classOf[Bank], bankId), name = name))
-        banks(name)
+        //if (bankId.length() <= 4){
+            val name = s"bank$bankId"
+            banks += (name -> actorSystem.actorOf(Props(classOf[Bank], bankId), name = name))
+            banks(name)
+        //}
     }
 
     def findBank(bankId: String): ActorRef = {
